@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class BoardModel {
 
-    HashSet<Vector2Int> collected = new HashSet<Vector2Int>();
-    SortedList<int, Vector2Int> newGenerationsCandidats = new SortedList<int, Vector2Int>();
+    HashSet<Vector2Int> collected;
+    SortedList<int, Vector2Int> newGenerationsCandidats;
 
-    BlockType[,] board;
+    readonly BlockType[,] board;
     BoardEventReceiver receiver;
 
     public BoardModel (int boardSize, BoardEventReceiver receiver) {
@@ -24,6 +24,7 @@ public class BoardModel {
     }
 
     public void collect (Vector2Int start, Vector2Int end) {
+        collected = new HashSet<Vector2Int>();
         var startType = board[start.x, start.y];
         var endType = board[end.x, end.y];
         collect(startType, end, start - end);
@@ -38,6 +39,7 @@ public class BoardModel {
     }
 
     public void commitCollection () {
+        newGenerationsCandidats = new SortedList<int, Vector2Int>();
         var pushDownColunms = new HashSet<int>();
         foreach (var position in collected) {
             board[position.x, position.y] = BlockType.none;
@@ -46,7 +48,6 @@ public class BoardModel {
         pushDownAll(pushDownColunms);
         generateNew();
         collected = new HashSet<Vector2Int>();
-        newGenerationsCandidats = new SortedList<int, Vector2Int>();
     }
 
     void pushDownAll(HashSet<int> colunms) {
@@ -75,11 +76,13 @@ public class BoardModel {
             }
         }
 
+        //keys must be unique and sorted in column, according to y
         var key = position.x * board.GetLength(0) + position.y;
         newGenerationsCandidats.Add(key, position);
     }
 
     void generateNew() {
+        //offsets is <column number: how many new blocks in this colunm will be>
         var offsets = new Dictionary<int, int>();
         foreach(var data in newGenerationsCandidats) {
             var position = data.Value;
@@ -95,25 +98,18 @@ public class BoardModel {
 
     void collect (BlockType blockType, Vector2Int position, Vector2Int skip) {
         Vector2Int leftBound, rightBound, upBound, downBound;
+        leftBound = rightBound = upBound = downBound = position;
         if (skip != Vector2Int.left) {
             leftBound = calculateBound(blockType, position, Vector2Int.left);
-        } else {
-            leftBound = position;
         }
         if (skip != Vector2Int.right) {
             rightBound = calculateBound(blockType, position, Vector2Int.right);
-        } else {
-            rightBound = position;
         }
         if (skip != Vector2Int.up) {
             upBound = calculateBound(blockType, position, Vector2Int.up);
-        } else {
-            upBound = position;
         }
         if (skip != Vector2Int.down) {
             downBound = calculateBound(blockType, position, Vector2Int.down);
-        } else {
-            downBound = position;
         }
 
         if ((leftBound - rightBound).magnitude > 1) {
@@ -138,28 +134,16 @@ public class BoardModel {
     }
 
     void collectHorizontal (Vector2Int start, Vector2Int end) {
-        int startX, endX;
-        if (start.x - end.x > 0) {
-            startX = end.x;
-            endX = start.x;
-        } else {
-            startX = start.x;
-            endX = end.x;
-        }
+        var startX = Mathf.Min(start.x, end.x);
+        var endX = Mathf.Max(start.x, end.x);
         for (var x = startX; x <= endX; x++) {
             collected.Add(new Vector2Int(x, start.y));
         }
     }
 
     void collectVertical (Vector2Int start, Vector2Int end) {
-        int startY, endY;
-        if (start.y - end.y > 0) {
-            startY = end.y;
-            endY = start.y;
-        } else {
-            startY = start.y;
-            endY = end.y;
-        }
+        var startY = Mathf.Min(start.y, end.y);
+        var endY = Mathf.Max(start.y, end.y);
         for (var y = startY; y <= endY; y++) {
             collected.Add(new Vector2Int(start.x, y));
         }

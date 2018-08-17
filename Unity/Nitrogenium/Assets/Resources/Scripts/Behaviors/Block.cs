@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Block: MonoBehaviour {
 
+    //distance when block arrive at its destination
     const float movementEpsilon = 0.1f;
 
     public Vector3? destination;
@@ -19,7 +20,7 @@ public class Block: MonoBehaviour {
         }
     }
 
-    public Vector3 cellPosition {
+    Vector3 cellPosition {
         get {
             return transform.parent.position;
         }

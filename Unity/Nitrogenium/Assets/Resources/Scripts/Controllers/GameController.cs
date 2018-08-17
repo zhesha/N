@@ -6,10 +6,12 @@ using UnityEngine.SceneManagement;
 
 public class GameController: MonoBehaviour, BoardEventReceiver {
 
+    const float cameraSize = 15;
     const float cellWidth = 1f;
 
     public GameObject board;
     public int boardSize = 10;
+    public Text scoreText;
 
     BoardModel boardModel;
     Vector2Int? switchStartPosition;
@@ -46,7 +48,7 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
     public void newGeneration (Vector2Int position, int offset) {
         const float cellOffset = cellWidth / 2f;
 
-        BlockData blockData = BlockData.getRandom();
+        var blockData = BlockData.getRandom();
         var cell = getCellFromPosition(position);
         var y = SceneUtils.instance.maxY - cellOffset + offset * cellWidth;
         cell.setUpBlock(blockData, y);
@@ -109,7 +111,6 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
     }
 
     Vector2Int cellPosition (Vector2 pixelPosition) {
-        const float cameraSize = 15;
         var blockSizeInPixel = Screen.height / cameraSize;
         var offsetX = Screen.width - blockSizeInPixel * boardSize;
         var offsetY = Screen.height - blockSizeInPixel * boardSize;
@@ -131,7 +132,6 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
     }
 
     void updateScore () {
-        var scoreText = GameObject.Find("ScoreText").GetComponent<Text>();
         var oldScore = System.Int32.Parse(scoreText.text);
         scoreText.text = (oldScore + 1).ToString();
     }
@@ -153,7 +153,7 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
                     Quaternion.identity
                 );
                 instance.transform.parent = board.transform;
-                BlockData blockData = BlockData.getRandom();
+                var blockData = BlockData.getRandom();
                 instance.GetComponent<Cell>().setUp(blockData);
                 boardModel.setCell(row, column, blockData.type);
             }

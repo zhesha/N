@@ -9,6 +9,7 @@ public class BlockData {
     static public BlockData getRandom () {
 
         var blockTypesCount = System.Enum.GetValues(typeof(BlockType)).Length;
+        //first element is skipped because it is "none"
         var blockTypesIndex = Random.Range(1, blockTypesCount);
         switch ((BlockType)blockTypesIndex) {
             case BlockType.red: return red;
