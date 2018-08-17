@@ -7,11 +7,14 @@ public enum BlockType { none, red, green, blue };
 public class BlockData {
 
     static public BlockData getRandom () {
-
         var blockTypesCount = System.Enum.GetValues(typeof(BlockType)).Length;
         //first element is skipped because it is "none"
         var blockTypesIndex = Random.Range(1, blockTypesCount);
-        switch ((BlockType)blockTypesIndex) {
+        return getFromType((BlockType)blockTypesIndex);
+    }
+
+    static public BlockData getFromType (BlockType type) {
+        switch (type) {
             case BlockType.red: return red;
             case BlockType.green: return green;
             case BlockType.blue: return blue;

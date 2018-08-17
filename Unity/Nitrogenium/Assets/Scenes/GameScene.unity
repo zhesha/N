@@ -169,7 +169,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   board: {fileID: 7086030}
-  boardSize: 10
+  scoreText: {fileID: 1768013628}
 --- !u!4 &234570676
 Transform:
   m_ObjectHideFlags: 0

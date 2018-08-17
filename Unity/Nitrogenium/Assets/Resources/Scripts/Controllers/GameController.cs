@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,17 +7,18 @@ using UnityEngine.SceneManagement;
 
 public class GameController: MonoBehaviour, BoardEventReceiver {
 
+    const string fileWithLevel = "Level.json";
     const float cameraSize = 15;
     const float cellWidth = 1f;
 
     public GameObject board;
-    public int boardSize = 10;
     public Text scoreText;
 
     BoardModel boardModel;
     Vector2Int? switchStartPosition;
     float maxFreezeOnSwitch;
     float controllFreezeOnSwitch;
+    int boardSize;
 
     public void toMenu () {
         SceneManager.LoadScene("MenuScene");
@@ -137,15 +139,27 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
     }
 
     void setUpBoard () {
+        var path = Path.Combine(Application.streamingAssetsPath, fileWithLevel);
+        if (File.Exists(path)) {
+            var data = File.ReadAllText(path);
+            LevelData levelData = JsonUtility.FromJson<LevelData>(data);
+            setUpBoard(levelData);
+        } else {
+            Debug.LogError("Level not loaded");
+        }
+    }
+
+    void setUpBoard (LevelData levelData) {
+        boardSize = levelData.boardSize;
         boardModel = new BoardModel(boardSize, this);
         const float cellOffset = cellWidth / 2f;
         float rowStartPosition = -boardSize / 2f,
             columnStartPosition = -boardSize / 2f;
         var cellPrefab = Resources.Load<GameObject>("Prefabs/Cell");
-        for (var column = 0; column < boardSize; column += 1) {
-            for (var row = 0; row < boardSize; row += 1) {
-                var x = rowStartPosition + row + cellOffset;
-                var y = columnStartPosition + column + cellOffset;
+        for (var row = 0; row < boardSize; row += 1) {
+            for (var column = 0; column < boardSize; column += 1) {
+                var x = columnStartPosition + column + cellOffset;
+                var y = rowStartPosition + row + cellOffset;
                 var position = new Vector3(x, y, 0);
                 var instance = Instantiate(
                     cellPrefab,
@@ -153,9 +167,9 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
                     Quaternion.identity
                 );
                 instance.transform.parent = board.transform;
-                var blockData = BlockData.getRandom();
+                var blockData = BlockData.getFromType((BlockType)levelData.cell(column, row));
                 instance.GetComponent<Cell>().setUp(blockData);
-                boardModel.setCell(row, column, blockData.type);
+                boardModel.setCell(column, row, blockData.type);
             }
         }
         var boardY = SceneUtils.instance.maxY - boardSize / 2f;
