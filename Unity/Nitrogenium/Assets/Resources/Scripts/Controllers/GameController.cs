@@ -1,9 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-public class GameController: MonoBehaviour {
+public class GameController: MonoBehaviour, BoardEventReceiver {
 
     const float cellWidth = 1f;
 
@@ -12,12 +13,69 @@ public class GameController: MonoBehaviour {
 
     BoardModel boardModel;
     Vector2Int? switchStartPosition;
+    float maxFreezeOnSwitch;
+    float controllFreezeOnSwitch;
+
+    public void toMenu () {
+        SceneManager.LoadScene("MenuScene");
+    }
+
+    #region BoardEventReceiver
+
+    public void cancelSwitch (Vector2Int firsh, Vector2Int second) {
+        var firshCell = getCellFromPosition(firsh);
+        var secondCell = getCellFromPosition(second);
+        firshCell.fakeSwitchAnimation(secondCell);
+        secondCell.fakeSwitchAnimation(firshCell);
+        controllFreezeOnSwitch = 2f / GameSetup.animationSpeed;
+    }
+
+    public void switchBlocks (Vector2Int firsh, Vector2Int second) {
+        var firstCell = getCellFromPosition(firsh);
+        var secondCell = getCellFromPosition(second);
+        firstCell.swap(secondCell);
+        controllFreezeOnSwitch = 1f / GameSetup.animationSpeed;
+    }
+
+    public void moveBlocks (Vector2Int from, Vector2Int to) {
+        var fromCell = getCellFromPosition(from);
+        var toCell = getCellFromPosition(to);
+        toCell.move(fromCell);
+    }
+
+    public void newGeneration (Vector2Int position, int offset) {
+        const float cellOffset = cellWidth / 2f;
+
+        BlockData blockData = BlockData.getRandom();
+        var cell = getCellFromPosition(position);
+        var y = SceneUtils.instance.maxY - cellOffset + offset * cellWidth;
+        cell.setUpBlock(blockData, y);
+        boardModel.setCell(position.x, position.y, blockData.type);
+
+        updateScore();
+
+        if (maxFreezeOnSwitch < offset) {
+            controllFreezeOnSwitch += (offset - maxFreezeOnSwitch) / GameSetup.animationSpeed;
+            maxFreezeOnSwitch = offset;
+        }
+    }
+
+    #endregion
 
     void Start () {
         setUpBoard();
     }
 
     void Update () {
+        if (controllFreezeOnSwitch > 0) {
+            controllFreezeOnSwitch -= Time.deltaTime;
+            if (controllFreezeOnSwitch <= 0) {
+                maxFreezeOnSwitch = 0;
+                afterBlockSwitched();
+            }
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0) && switchStartPosition == null) {
             setUpCursor();
         } else if (Input.GetMouseButtonDown(0) && switchStartPosition != null) {
@@ -28,52 +86,30 @@ public class GameController: MonoBehaviour {
     void setUpCursor () {
         switchStartPosition = cellPosition(Input.mousePosition);
         var cell = getCellFromPosition(switchStartPosition.Value);
-        cell.setCursor();
+        cell.cursorSeted = true;
     }
 
     void resetCursor () {
         var cell = getCellFromPosition(switchStartPosition.Value);
-        cell.resetCursor();
+        cell.cursorSeted = false;
         switchStartPosition = null;
 	}
 
 	void handleSwitch () {
-        var switchEnd = cellPosition(Input.mousePosition);
-        if (needToSwith(switchStartPosition.Value, switchEnd)) {
-            switchBlocks(switchStartPosition.Value, switchEnd);
+        var switchEndPosition = cellPosition(Input.mousePosition);
+        if (canSwith(switchStartPosition.Value, switchEndPosition)) {
+            boardModel.collect(switchStartPosition.Value, switchEndPosition);
         }
         resetCursor();
     }
 
-    bool needToSwith (Vector2Int start, Vector2Int end) {
+    bool canSwith (Vector2Int start, Vector2Int end) {
 		var distance = start - end;
         return Utils.equalFloat(distance.magnitude, 1);
     }
 
-    void switchBlocks (Vector2Int start, Vector2Int end) {
-        boardModel.collect(start, end);
-
-        if (boardModel.collected.Count > 0) {
-            var startCell = getCellFromPosition(start);
-            var endCell = getCellFromPosition(end);
-            var startBlock = startCell.transform.GetChild(0);
-            var endBlock = endCell.transform.GetChild(0);
-            startBlock.transform.parent = endCell.transform;
-            endBlock.transform.parent = startCell.transform;
-            startBlock.transform.position = endCell.transform.position;
-            endBlock.transform.position = startCell.transform.position;
-        }
-
-        foreach(var position in boardModel.collected) {
-            var cell = getCellFromPosition(position);
-            cell.collect();
-        }
-
-        boardModel.collected = new HashSet<Vector2Int>();
-    }
-
     Vector2Int cellPosition (Vector2 pixelPosition) {
-        var cameraSize = 15;
+        const float cameraSize = 15;
         var blockSizeInPixel = Screen.height / cameraSize;
         var offsetX = Screen.width - blockSizeInPixel * boardSize;
         var offsetY = Screen.height - blockSizeInPixel * boardSize;
@@ -90,24 +126,18 @@ public class GameController: MonoBehaviour {
         return cell.GetComponent<Cell>();
     }
 
-    bool inBound (Vector2 pixelPosition) {
-        if (pixelPosition.x < 0) {
-            return false;
-        }
-        if (pixelPosition.x > boardSize) {
-            return false;
-        }
-        if (pixelPosition.y < 0) {
-            return false;
-        }
-        if (pixelPosition.y > boardSize) {
-            return false;
-        }
-        return true;
+    void afterBlockSwitched () {
+        boardModel.commitCollection();
+    }
+
+    void updateScore () {
+        var scoreText = GameObject.Find("ScoreText").GetComponent<Text>();
+        var oldScore = System.Int32.Parse(scoreText.text);
+        scoreText.text = (oldScore + 1).ToString();
     }
 
     void setUpBoard () {
-        boardModel = new BoardModel(boardSize);
+        boardModel = new BoardModel(boardSize, this);
         const float cellOffset = cellWidth / 2f;
         float rowStartPosition = -boardSize / 2f,
             columnStartPosition = -boardSize / 2f;
@@ -131,9 +161,5 @@ public class GameController: MonoBehaviour {
         var boardY = SceneUtils.instance.maxY - boardSize / 2f;
         var boardX = SceneUtils.instance.maxX - boardSize / 2f;
         board.transform.position = new Vector3(boardX, boardY, 0);
-    }
-
-    public void toMenu () {
-        SceneManager.LoadScene("MenuScene");
     }
 }

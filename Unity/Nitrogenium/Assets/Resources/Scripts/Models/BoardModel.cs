@@ -4,12 +4,15 @@ using UnityEngine;
 
 public class BoardModel {
 
-    public HashSet<Vector2Int> collected = new HashSet<Vector2Int>();
+    HashSet<Vector2Int> collected = new HashSet<Vector2Int>();
+    SortedList<int, Vector2Int> newGenerationsCandidats = new SortedList<int, Vector2Int>();
 
     BlockType[,] board;
+    BoardEventReceiver receiver;
 
-    public BoardModel (int boardSize) {
+    public BoardModel (int boardSize, BoardEventReceiver receiver) {
         board = new BlockType[boardSize, boardSize];
+        this.receiver = receiver;
     }
 
     public void setCell (int x, int y, BlockType blockType) {
@@ -28,8 +31,66 @@ public class BoardModel {
         if (collected.Count > 0) {
             board[start.x, start.y] = endType;
             board[end.x, end.y] = startType;
+            receiver.switchBlocks(start, end);
+        } else {
+            receiver.cancelSwitch(start, end);
         }
-        cleanUpCollected();
+    }
+
+    public void commitCollection () {
+        var pushDownColunms = new HashSet<int>();
+        foreach (var position in collected) {
+            board[position.x, position.y] = BlockType.none;
+            pushDownColunms.Add(position.x);
+        }
+        pushDownAll(pushDownColunms);
+        generateNew();
+        collected = new HashSet<Vector2Int>();
+        newGenerationsCandidats = new SortedList<int, Vector2Int>();
+    }
+
+    void pushDownAll(HashSet<int> colunms) {
+        foreach(var x in colunms) {
+            for (var y = 0; y < board.GetLength(0); y += 1) {
+                if(board[x, y] == BlockType.none) {
+                    pushDown(new Vector2Int(x, y));
+                }
+            }
+        }
+    }
+
+    void pushDown (Vector2Int position) {
+        for (
+            var newPosition = position + Vector2Int.up;
+            inBound(newPosition);
+            newPosition += Vector2Int.up
+        ) {
+            
+            var candidat = board[newPosition.x, newPosition.y];
+            if (candidat != BlockType.none) {
+                board[position.x, position.y] = candidat;
+                receiver.moveBlocks(newPosition, position);
+                board[newPosition.x, newPosition.y] = BlockType.none;
+                return;
+            }
+        }
+
+        var key = position.x * board.GetLength(0) + position.y;
+        newGenerationsCandidats.Add(key, position);
+    }
+
+    void generateNew() {
+        var offsets = new Dictionary<int, int>();
+        foreach(var data in newGenerationsCandidats) {
+            var position = data.Value;
+            if (offsets.ContainsKey(position.x)) {
+                offsets[position.x] += 1;
+            } else {
+                offsets.Add(position.x, 1);
+            }
+            int offset = offsets[position.x];
+            receiver.newGeneration(position, offset);
+        }
     }
 
     void collect (BlockType blockType, Vector2Int position, Vector2Int skip) {
@@ -68,7 +129,7 @@ public class BoardModel {
         Vector2Int position,
         Vector2Int direction
     ) {
-        
+
         position += direction;
         while (isSame(blockType, position)) {
             position += direction;
@@ -104,12 +165,6 @@ public class BoardModel {
         }
     }
 
-    void cleanUpCollected () {
-        foreach (var position in collected) {
-            board[position.x, position.y] = BlockType.none;
-        }
-    }
-
     bool isSame (BlockType blockType, Vector2Int position) {
         if (!inBound(position)) {
             return false;
@@ -118,19 +173,25 @@ public class BoardModel {
     }
 
     bool inBound (Vector2 position) {
-        var boardSize = board.GetLength(0) - 1;
         if (position.x < 0) {
             return false;
         }
-        if (position.x > boardSize) {
+        if (position.x >= board.GetLength(0)) {
             return false;
         }
         if (position.y < 0) {
             return false;
         }
-        if (position.y > boardSize) {
+        if (position.y >= board.GetLength(1)) {
             return false;
         }
         return true;
     }
+}
+
+public interface BoardEventReceiver {
+    void cancelSwitch (Vector2Int firsh, Vector2Int second);
+    void switchBlocks (Vector2Int firsh, Vector2Int second);
+    void moveBlocks (Vector2Int from, Vector2Int to);
+    void newGeneration (Vector2Int position, int offset);
 }
