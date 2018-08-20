@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum BlockType { none, red, green, blue };
+public enum BlockType { none, red, green, blue, cyan, magenta, yellow };
 
 public class BlockData {
 
@@ -14,26 +14,31 @@ public class BlockData {
     }
 
     static public BlockData getFromType (BlockType type) {
+        Color color;
         switch (type) {
-            case BlockType.red: return red;
-            case BlockType.green: return green;
-            case BlockType.blue: return blue;
+            case BlockType.red:
+                color = new Color(255, 0, 0);
+                break;
+            case BlockType.green: 
+                color = new Color(0, 255, 0);
+                break;
+            case BlockType.blue: 
+                color = new Color(0, 0, 255);
+                break;
+            case BlockType.cyan: 
+                color = new Color(0, 255, 255);
+                break;
+            case BlockType.magenta: 
+                color = new Color(255, 0, 255);
+                break;
+            case BlockType.yellow: 
+                color = new Color(255, 255, 0);
+                break;
             default: throw new KeyNotFoundException();
         }
-    }
 
-    static public BlockData red = new BlockData(
-        BlockType.red,
-        new Color(255, 0, 0)
-    );
-    static public BlockData green = new BlockData(
-        BlockType.green,
-        new Color(0, 255, 0)
-    );
-    static public BlockData blue = new BlockData(
-        BlockType.blue,
-        new Color(0, 0, 255)
-    );
+        return new BlockData(type, color);
+    }
 
     readonly public Color color;
     readonly public BlockType type;

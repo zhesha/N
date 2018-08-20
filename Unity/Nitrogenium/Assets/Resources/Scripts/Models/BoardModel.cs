@@ -19,14 +19,19 @@ public class BoardModel {
         board[x, y] = blockType;
     }
 
+    public void setCellWithCollecting (int x, int y, BlockType blockType) {
+        setCell(x, y, blockType);
+        collect(blockType, new Vector2Int(x, y), Vector2Int.zero);
+    }
+
     public BlockType getCell (int x, int y) {
         return board[x, y];
     }
 
     public void collect (Vector2Int start, Vector2Int end) {
         collected = new HashSet<Vector2Int>();
-        var startType = board[start.x, start.y];
-        var endType = board[end.x, end.y];
+        var startType = getCell(start.x, start.y);
+        var endType = getCell(end.x, end.y);
         collect(startType, end, start - end);
         collect(endType, start, end - start);
         if (collected.Count > 0) {
@@ -45,40 +50,53 @@ public class BoardModel {
             board[position.x, position.y] = BlockType.none;
             pushDownColunms.Add(position.x);
         }
+        collected = new HashSet<Vector2Int>();
         pushDownAll(pushDownColunms);
         generateNew();
-        collected = new HashSet<Vector2Int>();
     }
 
     void pushDownAll(HashSet<int> colunms) {
+        var candidates = new Dictionary<Vector2Int, BlockType>();
         foreach(var x in colunms) {
             for (var y = 0; y < board.GetLength(0); y += 1) {
-                if(board[x, y] == BlockType.none) {
-                    pushDown(new Vector2Int(x, y));
+                if(getCell(x, y) == BlockType.none) {
+                    var position = new Vector2Int(x, y);
+                    var candidat = pushDown(position);
+                    if (candidat.HasValue) {
+                        candidates.Add(position, candidat.Value);
+                    }
                 }
             }
         }
+
+        foreach (var candidat in candidates) {
+            var candidatPosition = candidat.Key;
+            var candidatType = candidat.Value;
+            setCellWithCollecting(candidatPosition.x, candidatPosition.y, candidatType);
+        }
     }
 
-    void pushDown (Vector2Int position) {
+    BlockType? pushDown (Vector2Int position) {
+        
         for (
             var newPosition = position + Vector2Int.up;
             inBound(newPosition);
             newPosition += Vector2Int.up
         ) {
             
-            var candidat = board[newPosition.x, newPosition.y];
+            var candidat = getCell(newPosition.x, newPosition.y);
             if (candidat != BlockType.none) {
-                board[position.x, position.y] = candidat;
                 receiver.moveBlocks(newPosition, position);
+                board[position.x, position.y] = BlockType.none;
                 board[newPosition.x, newPosition.y] = BlockType.none;
-                return;
+                return candidat;
             }
         }
 
         //keys must be unique and sorted in column, according to y
         var key = position.x * board.GetLength(0) + position.y;
         newGenerationsCandidats.Add(key, position);
+        return null;
     }
 
     void generateNew() {
@@ -153,7 +171,7 @@ public class BoardModel {
         if (!inBound(position)) {
             return false;
         }
-        return board[position.x, position.y] == blockType;
+        return getCell(position.x, position.y) == blockType;
     }
 
     bool inBound (Vector2 position) {

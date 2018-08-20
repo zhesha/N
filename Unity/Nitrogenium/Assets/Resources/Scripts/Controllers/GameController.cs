@@ -54,7 +54,7 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
         var cell = getCellFromPosition(position);
         var y = SceneUtils.instance.maxY - cellOffset + offset * cellWidth;
         cell.setUpBlock(blockData, y);
-        boardModel.setCell(position.x, position.y, blockData.type);
+        boardModel.setCellWithCollecting(position.x, position.y, blockData.type);
 
         updateScore();
 
