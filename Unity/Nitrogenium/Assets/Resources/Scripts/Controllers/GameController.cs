@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using NitrogeniumDLL;
 
 public class GameController: MonoBehaviour, BoardEventReceiver {
 

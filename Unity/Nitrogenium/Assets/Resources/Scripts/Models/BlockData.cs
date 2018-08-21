@@ -1,8 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public enum BlockType { none, red, green, blue, cyan, magenta, yellow };
+using NitrogeniumDLL;
 
 public class BlockData {
 

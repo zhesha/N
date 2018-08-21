@@ -1,8 +1,9 @@
 ﻿<Properties StartupConfiguration="{56F57EFB-E316-8827-DF3C-E5C18E929210}|">
   <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="Unity.Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Resources/Scripts/Models/BoardModel.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Resources/Scripts/Models/BlockData.cs">
     <Files>
-      <File FileName="Assets/Resources/Scripts/Models/BoardModel.cs" Line="23" Column="17" />
+      <File FileName="Assets/Resources/Scripts/Controllers/GameController.cs" Line="171" Column="38" />
+      <File FileName="Assets/Resources/Scripts/Models/BlockData.cs" Line="4" Column="22" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
