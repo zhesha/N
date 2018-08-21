@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class BoardModel {
 
-    HashSet<Vector2Int> collected;
-    SortedList<int, Vector2Int> newGenerationsCandidats;
+    HashSet<Vector2Int> collected = new HashSet<Vector2Int>();
+    SortedList<int, Vector2Int> newGenerationsCandidats = new SortedList<int, Vector2Int>();
 
     readonly BlockType[,] board;
     BoardEventReceiver receiver;
@@ -28,8 +28,8 @@ public class BoardModel {
         return board[x, y];
     }
 
-    public void collect (Vector2Int start, Vector2Int end) {
-        collected = new HashSet<Vector2Int>();
+    public bool collect (Vector2Int start, Vector2Int end) {
+        collected.Clear();
         var startType = getCell(start.x, start.y);
         var endType = getCell(end.x, end.y);
         collect(startType, end, start - end);
@@ -37,20 +37,22 @@ public class BoardModel {
         if (collected.Count > 0) {
             board[start.x, start.y] = endType;
             board[end.x, end.y] = startType;
-            receiver.switchBlocks(start, end);
+            return true;
+            //receiver.switchBlocks(start, end);
         } else {
-            receiver.cancelSwitch(start, end);
+            return false;
+            //receiver.cancelSwitch(start, end);
         }
     }
 
     public void commitCollection () {
-        newGenerationsCandidats = new SortedList<int, Vector2Int>();
+        newGenerationsCandidats.Clear();
         var pushDownColunms = new HashSet<int>();
         foreach (var position in collected) {
             board[position.x, position.y] = BlockType.none;
             pushDownColunms.Add(position.x);
         }
-        collected = new HashSet<Vector2Int>();
+        collected.Clear();
         pushDownAll(pushDownColunms);
         generateNew();
     }
@@ -192,8 +194,8 @@ public class BoardModel {
 }
 
 public interface BoardEventReceiver {
-    void cancelSwitch (Vector2Int firsh, Vector2Int second);
-    void switchBlocks (Vector2Int firsh, Vector2Int second);
+    //void cancelSwitch (Vector2Int firsh, Vector2Int second);
+    //void switchBlocks (Vector2Int firsh, Vector2Int second);
     void moveBlocks (Vector2Int from, Vector2Int to);
     void newGeneration (Vector2Int position, int offset);
 }

@@ -102,7 +102,12 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
 	void handleSwitch () {
         var switchEndPosition = cellPosition(Input.mousePosition);
         if (canSwith(switchStartPosition.Value, switchEndPosition)) {
-            boardModel.collect(switchStartPosition.Value, switchEndPosition);
+            var switched = boardModel.collect(switchStartPosition.Value, switchEndPosition);
+            if (switched) {
+                switchBlocks(switchStartPosition.Value, switchEndPosition);
+            } else {
+                cancelSwitch(switchStartPosition.Value, switchEndPosition);
+            }
         }
         resetCursor();
     }
