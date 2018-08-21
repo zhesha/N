@@ -17,8 +17,8 @@ public class BoardModelTests {
 
     [TearDown]
     public void setFixtures () {
-        reciever.moveBlocksD = (Vector2Int from, Vector2Int to) => {};
-        reciever.newGenerationD = (Vector2Int position, int offset) => {};
+        reciever.resetBlockD = (Vector2Int position, BlockType type, Vector2Int offset) => {};
+        reciever.moveLenghtD = (int lenght) => {};
         boardModel.setCell(2, 2, BlockType.green);
         boardModel.setCell(1, 2, BlockType.blue);
         boardModel.setCell(0, 2, BlockType.red);
@@ -51,16 +51,18 @@ public class BoardModelTests {
     public void collect_cancel () {
         var start = new Vector2Int(2, 2);
         var end = new Vector2Int(1, 2);
-        var result = boardModel.collect(start, end);
-        Assert.False(result);
+        boardModel.collect(start, end);
+        var result = boardModel.commitCollection();
+        Assert.AreEqual(0, result);
     }
 
     [Test]
     public void collect_switch () {
         var start = new Vector2Int(2, 0);
         var end = new Vector2Int(2, 1);
-        var result = boardModel.collect(start, end);
-        Assert.True(result);
+        boardModel.collect(start, end);
+        var result = boardModel.commitCollection();
+        Assert.AreEqual(3, result);
     }
 
     [Test]
@@ -74,32 +76,26 @@ public class BoardModelTests {
     }
 
     [Test]
-    public void moveBlocks () {
-        Vector2Int[] fromCell = new Vector2Int[3];
-        Vector2Int[] toCell = new Vector2Int[3];
+    public void moveLenght () {
         int count = 0;
-        reciever.moveBlocksD = (Vector2Int from, Vector2Int to) => {
-            fromCell[count] = from;
-            toCell[count] = to;
-            count++;
+        reciever.moveLenghtD = (int c) => {
+            count = c;
         };
 
         var start = new Vector2Int(0, 0);
         var end = new Vector2Int(0, 1);
         boardModel.collect(start, end);
         boardModel.commitCollection();
-        Assert.AreEqual(3, count);
-        Assert.AreEqual(new Vector2Int(0, 2), fromCell[0]);
-        Assert.AreEqual(new Vector2Int(2, 1), toCell[2]);
+        Assert.AreEqual(1, count);
     }
 
     [Test]
-    public void newGeneration () {
-        Vector2Int[] cellList = new Vector2Int[3];
-        int offset = 0;
+    public void resetBlock () {
+        Vector2Int[] cellList = new Vector2Int[8];
+        Vector2Int offset = Vector2Int.zero;
         int count = 0;
-        reciever.newGenerationD = (Vector2Int cell, int o) => {
-            cellList[count] = cell;
+        reciever.resetBlockD = (Vector2Int position, BlockType type, Vector2Int o) => {
+            cellList[count] = position;
             offset = o;
             count++;
         };
@@ -108,24 +104,28 @@ public class BoardModelTests {
         var end = new Vector2Int(0, 1);
         boardModel.collect(start, end);
         boardModel.commitCollection();
-        Assert.AreEqual(3, count);
-        Assert.AreEqual(new Vector2Int(0, 2), cellList[0]);
-        Assert.AreEqual(1, offset);
+        Assert.AreEqual(8, count);
+        Assert.AreEqual(new Vector2Int(0, 0), cellList[0]);
+        Assert.AreEqual(new Vector2Int(0, 1), cellList[2]);
+        Assert.AreEqual(new Vector2Int(0, 1), offset);
     }
 }
 
-delegate void MoveBlocks (Vector2Int from, Vector2Int to);
-delegate void NewGeneration (Vector2Int position, int offset);
+delegate void ResetBlock (Vector2Int position, BlockType type, Vector2Int offset);
+delegate void MoveLenght (int lenght);
 
 class Reciever: BoardEventReceiver {
 
-    public MoveBlocks moveBlocksD;
-    public NewGeneration newGenerationD;
-    
-    public void moveBlocks (Vector2Int from, Vector2Int to) {
-        moveBlocksD(from, to);
+    public ResetBlock resetBlockD;
+    public MoveLenght moveLenghtD;
+
+    public void resetBlock (Vector2Int position, BlockType type, Vector2Int offset) {
+        resetBlockD(position, type, offset);
     }
-    public void newGeneration (Vector2Int position, int offset){
-        newGenerationD(position, offset);
+
+    public int moveLenght {
+        set {
+            moveLenghtD(value);
+        }
     }
 }

@@ -28,24 +28,22 @@ public class BoardModel {
         return board[x, y];
     }
 
-    public bool collect (Vector2Int start, Vector2Int end) {
+    void resetBlock(Vector2Int position, BlockType blockType, Vector2Int offset) {
+        setCellWithCollecting(position.x, position.y, blockType);
+        receiver.resetBlock(position, blockType, offset);
+    }
+
+    public void collect (Vector2Int start, Vector2Int end) {
         collected.Clear();
         var startType = getCell(start.x, start.y);
         var endType = getCell(end.x, end.y);
-        collect(startType, end, start - end);
-        collect(endType, start, end - start);
-        if (collected.Count > 0) {
-            board[start.x, start.y] = endType;
-            board[end.x, end.y] = startType;
-            return true;
-            //receiver.switchBlocks(start, end);
-        } else {
-            return false;
-            //receiver.cancelSwitch(start, end);
-        }
+        resetBlock(start, endType, end - start);
+        resetBlock(end, startType, start - end);
+        receiver.moveLenght = 1;
     }
 
-    public void commitCollection () {
+    public int commitCollection () {
+        int result = collected.Count;
         newGenerationsCandidats.Clear();
         var pushDownColunms = new HashSet<int>();
         foreach (var position in collected) {
@@ -55,30 +53,34 @@ public class BoardModel {
         collected.Clear();
         pushDownAll(pushDownColunms);
         generateNew();
+        return result;
     }
 
+    struct PushDownData {
+        public Vector2Int position;
+        public BlockType blockType;
+        public Vector2Int offset;
+    }
     void pushDownAll(HashSet<int> colunms) {
-        var candidates = new Dictionary<Vector2Int, BlockType>();
+        var candidates = new List<PushDownData>();
         foreach(var x in colunms) {
             for (var y = 0; y < board.GetLength(0); y += 1) {
                 if(getCell(x, y) == BlockType.none) {
                     var position = new Vector2Int(x, y);
                     var candidat = pushDown(position);
                     if (candidat.HasValue) {
-                        candidates.Add(position, candidat.Value);
+                        candidates.Add(candidat.Value);
                     }
                 }
             }
         }
 
         foreach (var candidat in candidates) {
-            var candidatPosition = candidat.Key;
-            var candidatType = candidat.Value;
-            setCellWithCollecting(candidatPosition.x, candidatPosition.y, candidatType);
+            resetBlock(candidat.position, candidat.blockType, candidat.offset);
         }
     }
 
-    BlockType? pushDown (Vector2Int position) {
+    PushDownData? pushDown (Vector2Int position) {
         
         for (
             var newPosition = position + Vector2Int.up;
@@ -88,10 +90,12 @@ public class BoardModel {
             
             var candidat = getCell(newPosition.x, newPosition.y);
             if (candidat != BlockType.none) {
-                receiver.moveBlocks(newPosition, position);
-                board[position.x, position.y] = BlockType.none;
-                board[newPosition.x, newPosition.y] = BlockType.none;
-                return candidat;
+                var result = new PushDownData();
+                result.blockType = board[newPosition.x, newPosition.y];
+                result.offset = newPosition - position;
+                result.position = position;
+                setCell(newPosition.x, newPosition.y, BlockType.none);
+                return result;
             }
         }
 
@@ -104,16 +108,24 @@ public class BoardModel {
     void generateNew() {
         //offsets is <column number: how many new blocks in this colunm will be>
         var offsets = new Dictionary<int, int>();
+        var maxMoveLenght = 0;
         foreach(var data in newGenerationsCandidats) {
             var position = data.Value;
             if (offsets.ContainsKey(position.x)) {
                 offsets[position.x] += 1;
             } else {
-                offsets.Add(position.x, 1);
+                offsets.Add(position.x, 0);
             }
-            int offset = offsets[position.x];
-            receiver.newGeneration(position, offset);
+            int offset = offsets[position.x] + board.GetLength(1) - position.y;
+            if (offset > maxMoveLenght) {
+                maxMoveLenght = offset;
+            }
+
+            var type = randomType();
+            resetBlock(position, type, new Vector2Int(0, offset));
         }
+
+        receiver.moveLenght = maxMoveLenght;
     }
 
     void collect (BlockType blockType, Vector2Int position, Vector2Int skip) {
@@ -191,11 +203,16 @@ public class BoardModel {
         }
         return true;
     }
+
+    BlockType randomType () {
+        var blockTypesCount = System.Enum.GetValues(typeof(BlockType)).Length;
+        //first element is skipped because it is "none"
+        var blockTypesIndex = Random.Range(1, blockTypesCount);
+        return (BlockType)blockTypesIndex;
+    }
 }
 
 public interface BoardEventReceiver {
-    //void cancelSwitch (Vector2Int firsh, Vector2Int second);
-    //void switchBlocks (Vector2Int firsh, Vector2Int second);
-    void moveBlocks (Vector2Int from, Vector2Int to);
-    void newGeneration (Vector2Int position, int offset);
+    void resetBlock (Vector2Int position, BlockType type, Vector2Int offset);
+    int moveLenght { set; }
 }

@@ -16,7 +16,7 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
 
     BoardModel boardModel;
     Vector2Int? switchStartPosition;
-    float maxFreezeOnSwitch;
+    Vector2Int? switchEndPosition;
     float controllFreezeOnSwitch;
     int boardSize;
 
@@ -26,41 +26,15 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
 
     #region BoardEventReceiver
 
-    public void cancelSwitch (Vector2Int firsh, Vector2Int second) {
-        var firshCell = getCellFromPosition(firsh);
-        var secondCell = getCellFromPosition(second);
-        firshCell.fakeSwitchAnimation(secondCell);
-        secondCell.fakeSwitchAnimation(firshCell);
-        controllFreezeOnSwitch = 2f / GameSetup.animationSpeed;
-    }
-
-    public void switchBlocks (Vector2Int firsh, Vector2Int second) {
-        var firstCell = getCellFromPosition(firsh);
-        var secondCell = getCellFromPosition(second);
-        firstCell.swap(secondCell);
-        controllFreezeOnSwitch = 1f / GameSetup.animationSpeed;
-    }
-
-    public void moveBlocks (Vector2Int from, Vector2Int to) {
-        var fromCell = getCellFromPosition(from);
-        var toCell = getCellFromPosition(to);
-        toCell.move(fromCell);
-    }
-
-    public void newGeneration (Vector2Int position, int offset) {
-        const float cellOffset = cellWidth / 2f;
-
-        var blockData = BlockData.getRandom();
+    public void resetBlock (Vector2Int position, BlockType type, Vector2Int offset) {
         var cell = getCellFromPosition(position);
-        var y = SceneUtils.instance.maxY - cellOffset + offset * cellWidth;
-        cell.setUpBlock(blockData, y);
-        boardModel.setCellWithCollecting(position.x, position.y, blockData.type);
+        var data = BlockData.getFromType(type);
+        cell.setUpBlock(data, offset);
+    }
 
-        updateScore();
-
-        if (maxFreezeOnSwitch < offset) {
-            controllFreezeOnSwitch += (offset - maxFreezeOnSwitch) / GameSetup.animationSpeed;
-            maxFreezeOnSwitch = offset;
+    public int moveLenght {
+        set {
+            controllFreezeOnSwitch = value;
         }
     }
 
@@ -74,8 +48,7 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
         if (controllFreezeOnSwitch > 0) {
             controllFreezeOnSwitch -= Time.deltaTime;
             if (controllFreezeOnSwitch <= 0) {
-                maxFreezeOnSwitch = 0;
-                afterBlockSwitched();
+                finishMove();
             }
             return;
         }
@@ -96,20 +69,17 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
     void resetCursor () {
         var cell = getCellFromPosition(switchStartPosition.Value);
         cell.cursorSeted = false;
-        switchStartPosition = null;
 	}
 
 	void handleSwitch () {
-        var switchEndPosition = cellPosition(Input.mousePosition);
-        if (canSwith(switchStartPosition.Value, switchEndPosition)) {
-            var switched = boardModel.collect(switchStartPosition.Value, switchEndPosition);
-            if (switched) {
-                switchBlocks(switchStartPosition.Value, switchEndPosition);
-            } else {
-                cancelSwitch(switchStartPosition.Value, switchEndPosition);
-            }
+        if (switchEndPosition == null) {
+            switchEndPosition = cellPosition(Input.mousePosition);
         }
-        resetCursor();
+        if (canSwith(switchStartPosition.Value, switchEndPosition.Value)) {
+            boardModel.collect(switchStartPosition.Value, switchEndPosition.Value);
+            resetCursor();
+        }
+
     }
 
     bool canSwith (Vector2Int start, Vector2Int end) {
@@ -134,13 +104,20 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
         return cell.GetComponent<Cell>();
     }
 
-    void afterBlockSwitched () {
-        boardModel.commitCollection();
+    void finishMove () {
+        var commited = boardModel.commitCollection();
+        if (commited < 0 && switchStartPosition != null && switchEndPosition != null) {
+            handleSwitch();
+        } else {
+            updateScore(commited);
+        }
+        switchStartPosition = null;
+        switchEndPosition = null;
     }
 
-    void updateScore () {
+    void updateScore (int count) {
         var oldScore = System.Int32.Parse(scoreText.text);
-        scoreText.text = (oldScore + 1).ToString();
+        scoreText.text = (oldScore + count).ToString();
     }
 
     void setUpBoard () {

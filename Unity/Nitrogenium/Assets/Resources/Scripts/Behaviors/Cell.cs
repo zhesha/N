@@ -21,27 +21,16 @@ public class Cell: MonoBehaviour {
     }
 
     GameObject _block;
-    GameObject block {
-        get {
-            return _block;
-        }
-    }
 
     BlockData blockData {
-        get {
-            return block.GetComponent<Block>().data;
-        }
         set {
-            block.GetComponent<Block>().data = value;
+            _block.GetComponent<Block>().data = value;
         }
     }
 
     Vector3 blockPosition {
-        get {
-            return block.transform.position;
-        }
         set {
-            block.transform.position = value;
+            _block.transform.position = value;
         }
     }
 
@@ -55,10 +44,14 @@ public class Cell: MonoBehaviour {
         setUpBlock(blockData);
     }
 
-    public void setUpBlock (BlockData data, float? y = null) {
+    public void setUpBlock (BlockData data, Vector2Int? offset = null) {
         Vector3 position;
-        if (y.HasValue) {
-            position = new Vector3(transform.position.x, y.Value, 0);
+        if (offset.HasValue) {
+            position = new Vector3(
+                transform.position.x + offset.Value.x,
+                transform.position.y + offset.Value.y,
+                0
+            );
         } else {
             position = transform.position;
         }
@@ -70,18 +63,4 @@ public class Cell: MonoBehaviour {
     public void fakeSwitchAnimation (Cell destination) {
         _block.GetComponent<Block>().destination = destination.transform.position;
     }
-
-    public void swap (Cell other) {
-        var thisBlock = blockData;
-        var otherBlock = other.blockData;
-        blockData = otherBlock;
-        other.blockData = thisBlock;
-        blockPosition = other.transform.position;
-        other.blockPosition = transform.position;
-    }
-
-    public void move (Cell from) {
-        blockData = from.blockData;
-        blockPosition = from.transform.position;
-	}
 }

@@ -6,13 +6,6 @@ public enum BlockType { none, red, green, blue, cyan, magenta, yellow };
 
 public class BlockData {
 
-    static public BlockData getRandom () {
-        var blockTypesCount = System.Enum.GetValues(typeof(BlockType)).Length;
-        //first element is skipped because it is "none"
-        var blockTypesIndex = Random.Range(1, blockTypesCount);
-        return getFromType((BlockType)blockTypesIndex);
-    }
-
     static public BlockData getFromType (BlockType type) {
         Color color;
         switch (type) {
