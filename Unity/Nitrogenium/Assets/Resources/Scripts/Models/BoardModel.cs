@@ -37,6 +37,10 @@ public class BoardModel {
         collected.Clear();
         var startType = getCell(start.x, start.y);
         var endType = getCell(end.x, end.y);
+        //As call resetBlock two time in a row,
+        //need to set cell to prevent cheking wrong type in second call
+        setCell(start.x, start.y, endType);
+        setCell(end.x, end.y, startType);
         resetBlock(start, endType, end - start);
         resetBlock(end, startType, start - end);
         receiver.moveLenght = 1;

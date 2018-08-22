@@ -1,8 +1,8 @@
 ﻿<Properties StartupConfiguration="{56F57EFB-E316-8827-DF3C-E5C18E929210}|">
   <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="Unity.Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Resources/Scripts/Models/GameSetup.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Resources/Scripts/Controllers/GameController.cs">
     <Files>
-      <File FileName="Assets/Resources/Scripts/Controllers/GameController.cs" Line="113" Column="24" />
+      <File FileName="Assets/Resources/Scripts/Controllers/GameController.cs" Line="117" Column="25" />
       <File FileName="Assets/Resources/Scripts/Models/BoardModel.cs" Line="214" Column="2" />
       <File FileName="Assets/Resources/Scripts/Behaviors/Cell.cs" Line="65" Column="6" />
       <File FileName="Assets/Resources/Editor/Tests/BoardModelTests.cs" Line="109" Column="57" />
@@ -13,7 +13,7 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
-      <Breakpoint file="/Users/sashaz/Documents/projects/N/N/Unity/Nitrogenium/Assets/Resources/Scripts/Controllers/GameController.cs" relfile="Assets/Resources/Scripts/Controllers/GameController.cs" line="113" column="1" />
+      <Breakpoint file="/Users/sashaz/Documents/projects/N/N/Unity/Nitrogenium/Assets/Resources/Scripts/Controllers/GameController.cs" relfile="Assets/Resources/Scripts/Controllers/GameController.cs" line="116" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
