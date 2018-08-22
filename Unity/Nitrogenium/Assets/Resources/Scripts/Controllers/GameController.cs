@@ -34,7 +34,7 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
 
     public int moveLenght {
         set {
-            controllFreezeOnSwitch = value;
+            controllFreezeOnSwitch = value / GameSetup.animationSpeed;
         }
     }
 
@@ -72,14 +72,21 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
 	}
 
 	void handleSwitch () {
-        if (switchEndPosition == null) {
-            switchEndPosition = cellPosition(Input.mousePosition);
+        switchEndPosition = cellPosition(Input.mousePosition);
+        var isSwitching = swapBlocks();
+        resetCursor();
+        if(!isSwitching) {
+            switchStartPosition = null;
+            switchEndPosition = null;
         }
-        if (canSwith(switchStartPosition.Value, switchEndPosition.Value)) {
-            boardModel.collect(switchStartPosition.Value, switchEndPosition.Value);
-            resetCursor();
-        }
+    }
 
+    bool swapBlocks () {
+        var needToSwitch = canSwith(switchStartPosition.Value, switchEndPosition.Value);
+        if (needToSwitch) {
+            boardModel.collect(switchStartPosition.Value, switchEndPosition.Value);
+        }
+        return needToSwitch;
     }
 
     bool canSwith (Vector2Int start, Vector2Int end) {
@@ -106,8 +113,8 @@ public class GameController: MonoBehaviour, BoardEventReceiver {
 
     void finishMove () {
         var commited = boardModel.commitCollection();
-        if (commited < 0 && switchStartPosition != null && switchEndPosition != null) {
-            handleSwitch();
+        if (commited <= 0 && switchStartPosition != null && switchEndPosition != null) {
+            swapBlocks();
         } else {
             updateScore(commited);
         }

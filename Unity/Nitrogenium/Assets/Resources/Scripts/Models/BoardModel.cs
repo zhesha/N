@@ -56,11 +56,6 @@ public class BoardModel {
         return result;
     }
 
-    struct PushDownData {
-        public Vector2Int position;
-        public BlockType blockType;
-        public Vector2Int offset;
-    }
     void pushDownAll(HashSet<int> colunms) {
         var candidates = new List<PushDownData>();
         foreach(var x in colunms) {
@@ -210,6 +205,12 @@ public class BoardModel {
         var blockTypesIndex = Random.Range(1, blockTypesCount);
         return (BlockType)blockTypesIndex;
     }
+}
+
+struct PushDownData {
+    public Vector2Int position;
+    public BlockType blockType;
+    public Vector2Int offset;
 }
 
 public interface BoardEventReceiver {
